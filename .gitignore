@@ -1,0 +1,21 @@
+# Logi (generowane w runtime — nie wersjonujemy)
+logs/nginx/*
+!logs/nginx/.gitkeep
+
+# Sekrety / zmienne środowiskowe (hasła do bazy itp. — NIGDY do gita)
+.env
+*.env
+!.env.example
+
+# Backupy bazy
+*.sql
+*.dump
+
+# Konfiguracja IDE
+.idea/
+.vscode/
+
+# Śmieci systemowe
+.DS_Store
+Thumbs.db
+desktop.ini
