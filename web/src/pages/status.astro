@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Strona STATYCZNA — wygenerowana podczas `astro build`.
+// Czas poniżej to moment BUDOWANIA: przy każdym odświeżeniu jest ten sam,
+// a zmienia się dopiero po ponownej przebudowie (czyli "po zapisie" w docelowym
+// modelu rebuild-on-save). To dowód, że treść jest statyczna, ale odświeżalna.
+const buildTime = new Date();
+---
+
+<Layout title="Status — strona statyczna">
+  <h1>Strona statyczna</h1>
+  <p class="bio">
+    Ta strona powstała podczas budowania (<code>astro build</code>).
+    Odśwież — czas się NIE zmieni. Zmieni się dopiero po ponownej przebudowie.
+  </p>
+  <p style="font-size:1.2rem; font-weight:600">
+    Zbudowano: {buildTime.toLocaleString('pl-PL')}
+  </p>
+  <nav><a href="/">← Strona główna</a></nav>
+</Layout>

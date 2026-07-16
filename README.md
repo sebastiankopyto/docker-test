@@ -1,21 +1,24 @@
-# Wizytówka — Docker + nginx
+# Wizytówka — Astro + nginx + Docker
 
-Prosta strona-wizytówka serwowana przez nginx w kontenerze Docker.
-Gotowa do rozbudowy o backend (API) i bazę danych (PostgreSQL).
+Strona-wizytówka na **Astro** (tryb hybrydowy: statyczny + renderowanie na
+żądanie), za bramą **nginx**, w kontenerach Docker. Gotowa do rozbudowy o
+backend (API) i bazę danych (PostgreSQL).
 
 ## Struktura
 
 ```
 docker/
-├── docker-compose.yml     # spina usługi; teraz aktywny tylko nginx
+├── docker-compose.yml     # nginx + web (Astro) + web-dev (hot-reload, profil dev)
 ├── nginx/
-│   └── nginx.conf         # reverse proxy + serwowanie strony (gotowe /api)
-├── site/                  # pliki strony statycznej — TO EDYTUJESZ
-│   ├── index.html
-│   ├── css/style.css
-│   └── js/main.js
+│   └── nginx.conf         # reverse proxy → serwer Astro (gotowe /api)
+├── web/                   # projekt Astro — TO EDYTUJESZ
+│   ├── src/pages/         # strony (index, blog, status=SSR)
+│   ├── src/content/blog/  # wpisy bloga (Markdown)
+│   ├── src/layouts/
+│   └── Dockerfile         # multi-stage: build (node) → runtime (node)
+├── site/                  # STARA wizytówka statyczna — backup (nieużywana)
 ├── api/                   # placeholder na backend (etap 2)
-├── logs/nginx/            # tu lądują logi nginx (access.log, error.log)
+├── logs/nginx/            # logi nginx (access.log, error.log)
 └── README.md
 ```
 
@@ -23,24 +26,35 @@ docker/
 
 Wymagany zainstalowany **Docker Desktop** (Windows) lub **Docker** (Linux).
 
+**Wersja produkcyjna** (zbudowane Astro za nginx):
+
 ```bash
-docker compose up -d      # uruchom w tle
+docker compose up -d --build     # zbuduj i uruchom w tle
 ```
 
-Wejdź na **http://localhost** — powinna pojawić się wizytówka.
+Wejdź na **http://localhost**. Strony:
+- `/` — wizytówka (statyczna)
+- `/blog` — lista wpisów (statyczna)
+- `/status` — demo renderowania na żądanie (czas zmienia się po odświeżeniu)
+
+**Wersja developerska** (hot-reload — zmiany widać od razu):
+
+```bash
+docker compose --profile dev up web-dev   # → http://localhost:4321
+```
 
 Przydatne komendy:
 
 ```bash
-docker compose logs -f nginx     # logi nginx na żywo
-docker compose ps                # status kontenerów (i healthcheck)
-docker compose restart nginx     # restart po zmianie nginx.conf
+docker compose logs -f web       # logi serwera Astro
+docker compose ps                # status + healthcheck
+docker compose up -d --build     # przebuduj po zmianie treści/kodu
 docker compose down              # zatrzymaj i usuń kontenery
 ```
 
-> Zmiany w plikach `site/` widać po odświeżeniu przeglądarki — nie trzeba
-> restartować kontenera (katalog jest podmontowany na żywo).
-> Zmiany w `nginx.conf` wymagają `docker compose restart nginx`.
+> W trybie **dev** (`web-dev`) zmiany w `web/src/` widać natychmiast.
+> W trybie **produkcyjnym** po zmianie treści przebuduj: `docker compose up -d --build`.
+> Nowy wpis bloga = nowy plik `.md` w `web/src/content/blog/` + przebudowa.
 
 ## Co dalej (kolejne etapy)
 

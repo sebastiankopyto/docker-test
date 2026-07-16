@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+// Lista wpisów, posortowana od najnowszego.
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+
+<Layout title="Blog">
+  <h1>Blog</h1>
+  <p class="muted" style="margin-bottom:1.5rem">Strona statyczna (prerenderowana).</p>
+
+  <ul class="posts">
+    {posts.map((post) => (
+      <li>
+        <a href={`/blog/${post.id}/`}>{post.data.title}</a>
+        <div class="muted">{post.data.date.toLocaleDateString('pl-PL')}</div>
+      </li>
+    ))}
+  </ul>
+
+  <nav><a href="/">← Strona główna</a></nav>
+</Layout>

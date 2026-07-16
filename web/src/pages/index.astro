@@ -1,0 +1,53 @@
+---
+import Layout from '../layouts/Layout.astro';
+const year = new Date().getFullYear();
+---
+
+<Layout title="Jan Kowalski — wizytówka">
+  <h1>Jan Kowalski</h1>
+  <p class="tagline">Programista &middot; Freelancer</p>
+
+  <p class="bio">
+    Cześć! Tworzę proste, szybkie i solidne rozwiązania.
+    Ta wersja wizytówki działa na Astro — podmień treść na swoją.
+  </p>
+
+  <p><a href="mailto:kontakt@example.com">kontakt@example.com</a></p>
+
+  <nav>
+    <a href="/blog">Blog</a>
+    <a href="/status">Status (build)</a>
+  </nav>
+
+  <section class="rebuild">
+    <p class="muted">Panel testowy — wyzwól re-render (docelowo zrobi to Payload po zapisie):</p>
+    <button id="rebuild-btn">🔄 Przebuduj stronę</button>
+    <pre id="rebuild-out" class="muted"></pre>
+  </section>
+
+  <p class="muted" style="margin-top:1.5rem">{year} &middot; Astro + nginx + Docker</p>
+</Layout>
+
+<script is:inline>
+  const btn = document.getElementById('rebuild-btn');
+  const out = document.getElementById('rebuild-out');
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    out.textContent = '⏳ Buduję... (stara wersja działa przez cały czas)';
+    try {
+      const res = await fetch('/rebuild', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        out.textContent =
+          `✅ Gotowe w ${data.ms} ms (wersja: ${data.release}).\n` +
+          `Wejdź na /status — czas builda się zmienił.`;
+      } else {
+        out.textContent = '⚠️ ' + (data.error || data.reason || 'nieznany błąd');
+      }
+    } catch (e) {
+      out.textContent = '❌ Błąd: ' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>

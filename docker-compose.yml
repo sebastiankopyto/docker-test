@@ -1,69 +1,90 @@
 # ============================================================
-#  Etap 1 — wizytówka statyczna serwowana przez nginx
-#  Uruchomienie:  docker compose up -d
-#  Podgląd:       http://localhost
-#  Logi:          docker compose logs -f nginx
-#  Zatrzymanie:   docker compose down
+#  Wizytówka na Astro (statyka) + nginx + builder (Docker)
+#
+#  Uruchomienie:
+#      docker compose up -d
+#      → http://localhost                (nginx serwuje statykę)
+#
+#  Re-render (jak zrobi to Payload po zapisie):
+#      curl -X POST http://localhost/rebuild
+#      albo przycisk "Przebuduj stronę" na stronie głównej
+#
+#  DEVELOPMENT z hot-reload:
+#      docker compose --profile dev up web-dev   → http://localhost:4321
+#
+#  Model:
+#    builder  → astro build → releases/build-N → atomowe przepięcie `current`
+#    web(nginx)→ serwuje /srv/www/current (stara wersja żyje przez cały build)
 # ============================================================
 
 services:
-  nginx:
+  # ---- web: nginx serwujący statykę z wolumenu ----
+  web:
     image: nginx:alpine
-    container_name: wizytowka-nginx
-    restart: unless-stopped            # kontener sam wstaje po awarii / reboocie
+    container_name: wizytowka-web
+    restart: unless-stopped
+    depends_on:
+      builder:
+        condition: service_healthy      # czeka na pierwszy build
     ports:
-      - "80:80"                        # http (na serwerze dojdzie 443 dla https)
+      - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro   # nasz konfig
-      - ./site:/usr/share/nginx/html:ro                        # pliki strony (tylko do odczytu)
-      - ./logs/nginx:/var/log/nginx                            # logi na dysku hosta
-    healthcheck:                       # sprawdza, czy nginx faktycznie odpowiada
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./logs/nginx:/var/log/nginx
+      - site-dist:/srv/www:ro           # gotowe pliki (tylko odczyt)
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]  # IPv4 (nginx nie słucha na IPv6)
       interval: 30s
       timeout: 5s
       retries: 3
-    logging:                           # rotacja logów Dockera (nie zapchają dysku)
+    logging:
       driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
+      options: { max-size: "10m", max-file: "5" }
+
+  # ---- builder: buduje statykę i wystawia /rebuild ----
+  #  Źródła wpieczone w obraz (Dockerfile.builder) — brak bind-mountu z Windows,
+  #  więc build jest szybki. Zmiana treści = przebudowa obrazu buildera:
+  #     docker compose build builder && docker compose up -d
+  builder:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.builder
+    container_name: wizytowka-builder
+    restart: unless-stopped
+    expose:
+      - "8080"                          # widoczny tylko wewnątrz sieci docker
+    volumes:
+      - site-dist:/srv/www              # tu zapisuje zbudowane wersje
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s                 # pierwszy start: build startowy
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  # ---- web-dev: Astro dev server z hot-reload (tylko profil "dev") ----
+  web-dev:
+    image: node:22-alpine
+    container_name: wizytowka-web-dev
+    profiles: ["dev"]
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "4321:4321"
+    volumes:
+      - ./web:/app
+      - web-node-modules:/app/node_modules
 
   # ----------------------------------------------------------
-  # ETAP 2 — backend / API (na razie wyłączony)
-  # Odkomentuj, gdy dojdzie formularz kontaktowy / pobieranie danych.
+  # ETAP 2/3 — backend/API + PostgreSQL (na razie wyłączone)
   # ----------------------------------------------------------
-  # api:
-  #   build: ./api
-  #   container_name: wizytowka-api
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     DATABASE_URL: "postgres://app:zmien_haslo@db:5432/appdb"
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "5"
+  # api:  { build: ./api, ... }
+  # db:   { image: postgres:16-alpine, volumes: [db-data:/var/lib/postgresql/data], ... }
 
-  # ----------------------------------------------------------
-  # ETAP 3 — baza danych PostgreSQL (na razie wyłączona)
-  # ----------------------------------------------------------
-  # db:
-  #   image: postgres:16-alpine
-  #   container_name: wizytowka-db
-  #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_USER: app
-  #     POSTGRES_PASSWORD: zmien_haslo
-  #     POSTGRES_DB: appdb
-  #   volumes:
-  #     - db-data:/var/lib/postgresql/data   # dane przeżywają restart/przebudowę
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 5
-
-# volumes:
-#   db-data:
+volumes:
+  site-dist:              # współdzielone: builder zapisuje, nginx serwuje
+  web-node-modules:       # tylko dla web-dev (hot-reload)
+  # db-data:

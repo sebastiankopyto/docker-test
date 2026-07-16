@@ -1,0 +1,27 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+// Generuje statyczną podstronę dla każdego wpisu.
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={post.data.title} description={post.data.description}>
+  <article>
+    <h1>{post.data.title}</h1>
+    <p class="muted" style="text-align:center; margin-bottom:1.5rem">
+      {post.data.date.toLocaleDateString('pl-PL')}
+    </p>
+    <Content />
+  </article>
+  <nav><a href="/blog">← Wszystkie wpisy</a></nav>
+</Layout>

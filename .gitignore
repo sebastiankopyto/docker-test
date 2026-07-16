@@ -1,3 +1,8 @@
+# Zależności i artefakty builda (Astro / Node)
+node_modules/
+web/dist/
+web/.astro/
+
 # Logi (generowane w runtime — nie wersjonujemy)
 logs/nginx/*
 !logs/nginx/.gitkeep
