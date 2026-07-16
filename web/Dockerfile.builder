@@ -8,8 +8,9 @@ FROM node:22-alpine
 WORKDIR /app
 
 # zależności (osobna warstwa = cache przy zmianie samego kodu)
-COPY package.json package-lock.json* ./
-RUN npm install
+# npm ci = instalacja 1:1 z package-lock.json (deterministyczna, nie modyfikuje locka)
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # źródła + skrypt buildera (node_modules/dist/.astro pominięte przez .dockerignore)
 COPY . .

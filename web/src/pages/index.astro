@@ -20,8 +20,15 @@ const year = new Date().getFullYear();
   </nav>
 
   <section class="rebuild">
-    <p class="muted">Panel testowy — wyzwól re-render (docelowo zrobi to Payload po zapisie):</p>
-    <button id="rebuild-btn">🔄 Przebuduj stronę</button>
+    <p class="muted">
+      Panel testowy — <strong>ponowny render</strong> istniejącej treści
+      (docelowo wyzwoli go Payload po zapisie).
+    </p>
+    <p class="muted" style="margin-top:.4rem">
+      Uwaga: to <em>nie</em> zaciąga nowej treści — wpisy są wpieczone w obraz.
+      Nowy/zmieniony wpis wymaga <code>docker compose build builder &amp;&amp; docker compose up -d</code>.
+    </p>
+    <button id="rebuild-btn">🔄 Przerenderuj stronę</button>
     <pre id="rebuild-out" class="muted"></pre>
   </section>
 
@@ -33,7 +40,7 @@ const year = new Date().getFullYear();
   const out = document.getElementById('rebuild-out');
   btn.addEventListener('click', async () => {
     btn.disabled = true;
-    out.textContent = '⏳ Buduję... (stara wersja działa przez cały czas)';
+    out.textContent = '⏳ Renderuję ponownie... (stara wersja działa przez cały czas)';
     try {
       const res = await fetch('/rebuild', { method: 'POST' });
       const data = await res.json();

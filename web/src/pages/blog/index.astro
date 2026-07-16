@@ -16,7 +16,7 @@ const posts = (await getCollection('blog')).sort(
     {posts.map((post) => (
       <li>
         <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-        <div class="muted">{post.data.date.toLocaleDateString('pl-PL')}</div>
+        <div class="muted">{post.data.date.toLocaleDateString('pl-PL', { timeZone: 'Europe/Warsaw' })}</div>
       </li>
     ))}
   </ul>

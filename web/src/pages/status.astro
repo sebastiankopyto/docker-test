@@ -15,7 +15,7 @@ const buildTime = new Date();
     Odśwież — czas się NIE zmieni. Zmieni się dopiero po ponownej przebudowie.
   </p>
   <p style="font-size:1.2rem; font-weight:600">
-    Zbudowano: {buildTime.toLocaleString('pl-PL')}
+    Zbudowano: {buildTime.toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}
   </p>
   <nav><a href="/">← Strona główna</a></nav>
 </Layout>
